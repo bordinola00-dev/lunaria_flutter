@@ -11,6 +11,7 @@ import '../../../core/services/supabase_config.dart';
 import '../../../shared/widgets/lunaria_card.dart';
 import '../../../shared/widgets/lunaria_scaffold.dart';
 import '../domain/my_space_models.dart';
+import 'app_update_section.dart';
 import 'my_space_chat_screen.dart';
 import 'my_space_controller.dart';
 import 'my_space_providers.dart';
@@ -95,11 +96,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             child: Text(
               'Alguien creó este pequeño universo pensando en ti.',
               textAlign: TextAlign.center,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontStyle: FontStyle.italic,
-              ),
+              style: Theme.of(context).textTheme.titleMedium
+                  ?.copyWith(fontStyle: FontStyle.italic),
             ),
           ),
+        const SizedBox(height: 18),
+        const AppUpdateSection(),
         const SizedBox(height: 6),
         OutlinedButton.icon(
           onPressed: _logout,
@@ -191,9 +193,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                     ),
                     'Tu perfil quedó guardado.',
                   ),
-            child: Text(
-              controller.isSaving ? 'Guardando…' : 'Guardar perfil',
-            ),
+            child: Text(controller.isSaving ? 'Guardando…' : 'Guardar perfil'),
           ),
         ],
       ),
@@ -292,17 +292,15 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
         ),
         const SizedBox(height: 18),
         FilledButton.tonalIcon(
-          onPressed: controller.isSaving ||
+          onPressed:
+              controller.isSaving ||
                   _inviteCode.text.replaceAll(RegExp(r'\s+'), '').isEmpty
               ? null
-              : () => _mutate(
-                  () async {
-                    await controller.acceptInvitation(_inviteCode.text);
-                    _inviteCode.clear();
-                    setState(() {});
-                  },
-                  'Te uniste al espacio.',
-                ),
+              : () => _mutate(() async {
+                  await controller.acceptInvitation(_inviteCode.text);
+                  _inviteCode.clear();
+                  setState(() {});
+                }, 'Te uniste al espacio.'),
           icon: const Icon(Icons.link),
           label: const Text('Unirme con un código'),
         ),
@@ -320,9 +318,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       children: [
         Text(
           'Eliminación pendiente',
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            color: LunariaColors.danger,
-          ),
+          style: Theme.of(context).textTheme.titleMedium
+              ?.copyWith(color: LunariaColors.danger),
         ),
         const SizedBox(height: 6),
         const Text(
@@ -379,9 +376,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             runSpacing: 12,
             children: [
               _Participant(
-                name: profile?.name.isNotEmpty == true
-                    ? profile!.name
-                    : 'Tú',
+                name: profile?.name.isNotEmpty == true ? profile!.name : 'Tú',
                 avatarUrl: profile?.avatarUrl,
                 isCurrent: true,
               ),
@@ -481,10 +476,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
             onPressed: controller.isSaving
                 ? null
                 : () => _confirmDeleteSpace(controller),
-            icon: const Icon(
-              Icons.link_off,
-              color: LunariaColors.danger,
-            ),
+            icon: const Icon(Icons.link_off, color: LunariaColors.danger),
             label: const Text(
               'Desvincular y eliminar el espacio',
               style: TextStyle(color: LunariaColors.danger),
@@ -505,10 +497,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
       if (image == null || !mounted) return;
       final bytes = await image.readAsBytes();
       await _mutate(
-        () => ref.read(mySpaceControllerProvider).uploadAvatar(
-          bytes: bytes,
-          fileName: image.name,
-        ),
+        () => ref
+            .read(mySpaceControllerProvider)
+            .uploadAvatar(bytes: bytes, fileName: image.name),
         'Tu foto de perfil quedó guardada.',
       );
     } catch (error) {
@@ -718,10 +709,7 @@ class _WaitingParticipant extends StatelessWidget {
         child: Icon(Icons.person_outline, color: LunariaColors.plum),
       ),
       const SizedBox(width: 8),
-      Text(
-        'Espacio disponible',
-        style: Theme.of(context).textTheme.bodyMedium,
-      ),
+      Text('Espacio disponible', style: Theme.of(context).textTheme.bodyMedium),
     ],
   );
 }

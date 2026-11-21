@@ -1,10 +1,14 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-const _url = String.fromEnvironment('SUPABASE_URL');
+const lunariaSupabaseUrl = 'https://gtzzvklqnmndqfzgbmpd.supabase.co';
+const _url = String.fromEnvironment(
+  'SUPABASE_URL',
+  defaultValue: lunariaSupabaseUrl,
+);
 const _publishableKey = String.fromEnvironment('SUPABASE_ANON_KEY');
 
 bool get isSupabaseConfigured =>
-    _url.trim().isNotEmpty && _publishableKey.trim().isNotEmpty;
+    _url.trim() == lunariaSupabaseUrl && _publishableKey.trim().isNotEmpty;
 
 bool _initialized = false;
 bool _disabledForSession = false;
@@ -14,6 +18,11 @@ bool get isSupabaseAvailable =>
     isSupabaseConfigured && _initialized && !_disabledForSession;
 
 Future<void> initializeSupabase() {
+  if (_url.trim() != lunariaSupabaseUrl) {
+    throw StateError(
+      'SUPABASE_URL debe coincidir con la URL oficial de Lunaria.',
+    );
+  }
   if (!isSupabaseConfigured) return Future<void>.value();
   _disabledForSession = false;
   if (_initialized) return Future<void>.value();
@@ -23,7 +32,7 @@ Future<void> initializeSupabase() {
 Future<void> _initialize() async {
   try {
     await Supabase.initialize(
-      url: _url.trim(),
+      url: lunariaSupabaseUrl,
       publishableKey: _publishableKey.trim(),
     );
     _initialized = true;

@@ -22,7 +22,7 @@ not run it there again.
 
 ```bash
 flutter run \
-  --dart-define=SUPABASE_URL=https://your-project.supabase.co \
+  --dart-define=SUPABASE_URL=https://gtzzvklqnmndqfzgbmpd.supabase.co \
   --dart-define=SUPABASE_ANON_KEY=your-public-publishable-key
 ```
 

@@ -40,7 +40,7 @@ values when running or building:
 
 ```bash
 flutter run \
-  --dart-define=SUPABASE_URL=https://your-project.supabase.co \
+  --dart-define=SUPABASE_URL=https://gtzzvklqnmndqfzgbmpd.supabase.co \
   --dart-define=SUPABASE_ANON_KEY=your-public-publishable-key
 ```
 
@@ -48,7 +48,7 @@ For an Android device, find its ID with `flutter devices`, then use:
 
 ```bash
 flutter run -d DEVICE_ID \
-  --dart-define=SUPABASE_URL=https://your-project.supabase.co \
+  --dart-define=SUPABASE_URL=https://gtzzvklqnmndqfzgbmpd.supabase.co \
   --dart-define=SUPABASE_ANON_KEY=your-public-publishable-key
 ```
 
@@ -63,3 +63,8 @@ placeholders and is not loaded by Flutter.
 When Supabase values are absent, Lunaria can use its local SharedPreferences
 mode. Cloud-backed features require a configured Supabase project and an
 authenticated user.
+
+Lunaria validates `SUPABASE_URL` against the official project URL above and
+passes that exact base URL to the single shared Supabase client. `.env` is not
+loaded by Flutter; the URL also defaults to the official value when no
+`SUPABASE_URL` dart-define is supplied.

@@ -9,6 +9,11 @@ void main() {
     SharedPreferences.setMockInitialValues({});
   });
 
+  test('uses the official Supabase project URL as its exact base', () {
+    expect(lunariaSupabaseUrl, 'https://gtzzvklqnmndqfzgbmpd.supabase.co');
+    expect(Uri.parse(lunariaSupabaseUrl).path, isEmpty);
+  });
+
   test(
     'compile-time Supabase values initialize and restore remote mode',
     () async {

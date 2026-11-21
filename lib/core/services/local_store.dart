@@ -83,6 +83,8 @@ class LunariaStore extends ChangeNotifier {
     final client = supabase;
     if (client != null) {
       authenticated = client.auth.currentSession != null;
+    } else if (kReleaseMode) {
+      authenticated = false;
     }
     dailyMood = _todaysMood()?.mood;
     notifyListeners();
@@ -222,10 +224,15 @@ class LunariaStore extends ChangeNotifier {
   }
 
   Future<void> authenticate(String displayName) async {
+    if (kReleaseMode && supabase?.auth.currentSession == null) {
+      throw StateError(
+        'No se puede iniciar sesión local en release sin una sesión válida de Supabase.',
+      );
+    }
     name = displayName.trim().isEmpty ? name : displayName.trim();
     authenticated = true;
     await _save();
-    if (isSupabaseConfigured && supabase?.auth.currentSession != null) {
+    if (supabase?.auth.currentSession != null) {
       await _supabase.upsertProfile(name: name, interests: interests);
     }
     notifyListeners();

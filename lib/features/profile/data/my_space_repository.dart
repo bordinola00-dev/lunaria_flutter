@@ -59,14 +59,10 @@ class SupabaseMySpaceRepository implements MySpaceRepository {
   SupabaseClient get _client {
     final client = supabase;
     if (client == null) {
-      if (!isSupabaseConfigured) {
-        throw const MySpaceException(
-          'My Space necesita SUPABASE_URL y SUPABASE_ANON_KEY configurados.',
-        );
-      }
-      throw const MySpaceException(
-        'Supabase no está inicializado en esta sesión. Reinicia la aplicación '
-        'y revisa initializeSupabase().',
+      throw MySpaceException(
+        supabaseConfigurationError ??
+            'Supabase no está disponible en esta sesión. Reinicia la app e '
+                'inicia sesión con una conexión válida.',
       );
     }
     return client;
@@ -224,14 +220,16 @@ class SupabaseMySpaceRepository implements MySpaceRepository {
         .single();
     final oldPath = oldProfile['avatar_path'] as String?;
     final path = '$userId/profile/${_randomFileToken()}.$extension';
-    await _client.storage.from(_bucket).uploadBinary(
-      path,
-      bytes,
-      fileOptions: FileOptions(
-        contentType: _contentType(extension),
-        upsert: false,
-      ),
-    );
+    await _client.storage
+        .from(_bucket)
+        .uploadBinary(
+          path,
+          bytes,
+          fileOptions: FileOptions(
+            contentType: _contentType(extension),
+            upsert: false,
+          ),
+        );
 
     late final Map<String, dynamic> row;
     try {
@@ -293,10 +291,7 @@ class SupabaseMySpaceRepository implements MySpaceRepository {
     final code = _newInviteCode();
     await _client.rpc(
       'create_lunaria_space_invitation',
-      params: {
-        'p_space_id': spaceId,
-        'p_token_hash': _hashInviteCode(code),
-      },
+      params: {'p_space_id': spaceId, 'p_token_hash': _hashInviteCode(code)},
     );
     return code;
   }
@@ -378,9 +373,7 @@ class SupabaseMySpaceRepository implements MySpaceRepository {
     final currentUserId = _userId;
     var query = client
         .from('lunaria_space_messages')
-        .select(
-          'id, sender_id, message_type, body, media_path, created_at',
-        )
+        .select('id, sender_id, message_type, body, media_path, created_at')
         .eq('space_id', spaceId);
     if (beforeCreatedAt != null && beforeId != null) {
       final cursor = beforeCreatedAt.toUtc().toIso8601String();
@@ -439,8 +432,7 @@ class SupabaseMySpaceRepository implements MySpaceRepository {
         LunaMessage(
           id: row['id'] as String,
           senderId: senderId,
-          senderName:
-              (profile?['name'] as String?)?.trim().isNotEmpty == true
+          senderName: (profile?['name'] as String?)?.trim().isNotEmpty == true
               ? (profile!['name'] as String).trim()
               : 'Participante',
           senderAvatarUrl: avatarUrls[senderId],
@@ -448,7 +440,8 @@ class SupabaseMySpaceRepository implements MySpaceRepository {
           messageType: row['message_type'] as String,
           mediaUrl: mediaPath == null ? null : await _signedUrl(mediaPath),
           createdAt: DateTime.parse(row['created_at'] as String),
-          isReadByPartner: senderId == currentUserId &&
+          isReadByPartner:
+              senderId == currentUserId &&
               (readByMessage[row['id']] ?? const <String>{}).any(
                 (readerId) => readerId != currentUserId,
               ),
@@ -484,14 +477,16 @@ class SupabaseMySpaceRepository implements MySpaceRepository {
     final extension = _imageExtension(fileName);
     final senderId = _userId;
     final path = '$spaceId/chat/$senderId/${_randomFileToken()}.$extension';
-    await _client.storage.from(_bucket).uploadBinary(
-      path,
-      bytes,
-      fileOptions: FileOptions(
-        contentType: _contentType(extension),
-        upsert: false,
-      ),
-    );
+    await _client.storage
+        .from(_bucket)
+        .uploadBinary(
+          path,
+          bytes,
+          fileOptions: FileOptions(
+            contentType: _contentType(extension),
+            upsert: false,
+          ),
+        );
     try {
       await _client.from('lunaria_space_messages').insert({
         'space_id': spaceId,
@@ -534,11 +529,7 @@ class SupabaseMySpaceRepository implements MySpaceRepository {
     final userId = _userId;
     final channel = _client.channel(
       'my-luna:$spaceId',
-      opts: RealtimeChannelConfig(
-        key: userId,
-        enabled: true,
-        private: true,
-      ),
+      opts: RealtimeChannelConfig(key: userId, enabled: true, private: true),
     );
     _channel = channel;
     channel

@@ -10,9 +10,16 @@ flutter pub get
 flutter run
 ```
 
-The app runs in local SharedPreferences mode without Supabase values.
+## Supabase configuration
 
-## Optional Supabase
+Supabase configuration is centralized and loaded at startup. Lunaria reads the
+official project URL and public anon/publishable key from the bundled `.env`
+asset when present, with `--dart-define` values available as a fallback. Use
+only the public client key; never add a `service_role` key or any secret to the
+Flutter app.
+
+Release builds require valid Supabase configuration and will show a clear
+configuration error instead of starting in local mode.
 
 Read [SUPABASE_SETUP.md](SUPABASE_SETUP.md) before configuring Supabase. This
 repository is missing the base migration `001_lunaria_mvp.sql`, so its included
@@ -26,12 +33,10 @@ flutter run \
   --dart-define=SUPABASE_ANON_KEY=your-public-publishable-key
 ```
 
-Never add a Supabase service-role key to the Flutter client.
-
 ## Android
 
 ```bash
 flutter devices
 flutter run
-flutter build apk --debug
+flutter build apk --release
 ```

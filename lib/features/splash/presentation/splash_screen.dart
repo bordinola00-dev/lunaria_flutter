@@ -40,10 +40,17 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
 
     try {
       if (localOnly) {
+        if (!canUseLocalDevelopmentMode) {
+          throw StateError(
+            'El modo local no está disponible en compilaciones release. '
+            'Configura Supabase antes de usar Lunaria.',
+          );
+        }
         useLocalModeForSession();
       } else {
         await initializeSupabase().timeout(const Duration(seconds: 15));
       }
+
       final store = ref.read(lunariaStoreProvider);
       await store.load().timeout(const Duration(seconds: 10));
       await Future<void>.delayed(const Duration(milliseconds: 500));
@@ -56,18 +63,25 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
             ? '/'
             : '/login',
       );
+    } on StateError catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _canContinueLocally = canUseLocalDevelopmentMode;
+        _errorMessage = error.message;
+      });
     } on Exception {
       if (!mounted) return;
       setState(() {
         _isLoading = false;
-        _canContinueLocally = isSupabaseConfigured;
+        _canContinueLocally = canUseLocalDevelopmentMode;
         _errorMessage = 'No pudimos terminar la inicialización. Revisa tu conexión y configuración, o vuelve a intentarlo.';
       });
     } catch (_) {
       if (!mounted) return;
       setState(() {
         _isLoading = false;
-        _canContinueLocally = isSupabaseConfigured;
+        _canContinueLocally = canUseLocalDevelopmentMode;
         _errorMessage = 'Ocurrió un problema al abrir tus datos locales. Puedes volver a intentarlo.';
       });
     }
@@ -121,11 +135,11 @@ class _SplashScreenState extends ConsumerState<SplashScreen>
                     onPressed: _start,
                     child: const Text('Intentar de nuevo'),
                   ),
-                  if (_canContinueLocally) ...[
+                  if (_canContinueLocally && canUseLocalDevelopmentMode) ...[
                     const SizedBox(height: 8),
                     TextButton(
                       onPressed: () => _start(localOnly: true),
-                      child: const Text('Continuar sin sincronización'),
+                      child: const Text('Continuar en modo local (desarrollo)'),
                     ),
                   ],
                 ],

@@ -40,10 +40,10 @@ class SupabaseMindSpaceRepository implements MindSpaceRepository {
           'Pulsa «Volver a intentar» para reactivar la conexión.',
         );
       }
-      throw const MindSpaceAccessException(
-        'No se recibieron SUPABASE_URL y SUPABASE_ANON_KEY al compilar. '
-        'Un archivo .env no se carga automáticamente; inicia Flutter con '
-        '--dart-define para ambos valores.',
+      throw MindSpaceAccessException(
+        supabaseConfigurationError ??
+            'Supabase no está configurado. Verifica SUPABASE_URL y '
+                'SUPABASE_ANON_KEY en la configuración de la app.',
       );
     }
     return client;

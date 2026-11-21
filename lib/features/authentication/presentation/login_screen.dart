@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -64,6 +65,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         });
         return;
       }
+    } else if (kReleaseMode) {
+      if (!mounted) return;
+      setState(() {
+        _error =
+            supabaseConfigurationError ??
+            'Supabase no está disponible. Revisa la configuración de la app.';
+        _isBusy = false;
+      });
+      return;
     }
 
     await ref.read(lunariaStoreProvider).authenticate(email.split('@').first);
@@ -227,13 +237,15 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ),
           ),
         ),
-        if (supabase == null)
-          const Padding(
-            padding: EdgeInsets.only(top: 12),
+        if (!kReleaseMode && supabase == null)
+          Padding(
+            padding: const EdgeInsets.only(top: 12),
             child: Text(
-              'Modo local activo: no se requieren credenciales para probar Lunaria.',
+              supabaseConfigurationError == null
+                  ? 'Modo local de desarrollo activo: los datos no se sincronizan con Supabase.'
+                  : 'Configuración de Supabase incompleta en desarrollo: se usará modo local y los datos no se sincronizarán.',
               textAlign: TextAlign.center,
-              style: TextStyle(fontSize: 12),
+              style: const TextStyle(fontSize: 12),
             ),
           ),
       ],

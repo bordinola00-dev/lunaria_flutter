@@ -34,40 +34,67 @@ environment; it does not make a fresh installation possible without migration
 
 ## Flutter configuration
 
-Flutter reads the Supabase URL and public client key with
-`String.fromEnvironment`; it does not load `.env` automatically. Supply the
-values when running or building:
+Lunaria loads Supabase configuration centrally at app startup from the bundled
+`.env` asset when it is present, and falls back to compile-time
+`--dart-define` values when `.env` does not provide them. All modules use the
+same shared Supabase client.
+
+Create or update `.env` in `lunaria_flutter/` with the public client values:
+
+```env
+SUPABASE_URL=https://gtzzvklqnmndqfzgbmpd.supabase.co
+SUPABASE_ANON_KEY=your-public-publishable-key
+```
+
+`SUPABASE_URL` must be exactly the official Lunaria project URL above. Use only
+the public publishable/anon key that is compatible with the installed
+`supabase_flutter` client. Never put a `service_role` key, secret key, or any
+administrative credential in `.env`, `--dart-define`, source code, assets, or a
+distributed build.
+
+### Local development
 
 ```bash
-flutter run \
+flutter pub get
+flutter run
+```
+
+`flutter run` and release builds include the project assets configured in
+`pubspec.yaml`, so the `.env` asset is available to the app when present.
+
+### Release builds
+
+Release builds require a valid Supabase configuration. If the configuration is
+missing or invalid, Lunaria shows a clear configuration error instead of
+starting in local mode.
+
+If you need to provide values at build time instead of the bundled `.env`, pass
+the same `--dart-define` values to the release command:
+
+```bash
+flutter build apk --release \
   --dart-define=SUPABASE_URL=https://gtzzvklqnmndqfzgbmpd.supabase.co \
   --dart-define=SUPABASE_ANON_KEY=your-public-publishable-key
 ```
 
-For an Android device, find its ID with `flutter devices`, then use:
+For an Android device, you can run directly with:
 
 ```bash
-flutter run -d DEVICE_ID \
+flutter run -d DEVICE_ID --release \
   --dart-define=SUPABASE_URL=https://gtzzvklqnmndqfzgbmpd.supabase.co \
   --dart-define=SUPABASE_ANON_KEY=your-public-publishable-key
 ```
 
-To build and install separately, use `flutter build apk --debug` with the same
-two `--dart-define` values, then `flutter install -d DEVICE_ID`.
+### Notes
 
-Use only the public publishable/anon client key in the Flutter app. Never put a
-`service_role` key in `--dart-define`, source code, assets, or a distributed
-build. The local `.env` file is ignored by Git; `.env.example` contains
-placeholders and is not loaded by Flutter.
-
-When Supabase values are absent, Lunaria can use its local SharedPreferences
-mode. Cloud-backed features require a configured Supabase project and an
-authenticated user.
-
-Lunaria validates `SUPABASE_URL` against the official project URL above and
-passes that exact base URL to the single shared Supabase client. `.env` is not
-loaded by Flutter; the URL also defaults to the official value when no
-`SUPABASE_URL` dart-define is supplied.
+- `.env` is ignored by Git; `.env.example` is a placeholder template and must
+  not contain real credentials.
+- Because `.env` can be bundled for app startup, it must contain only the public
+  Supabase client key, never secrets.
+- In development builds, Lunaria may offer an explicit local mode when Supabase
+  is unavailable, but this mode is not used silently in release builds.
+- Cloud-backed features require valid Supabase configuration and an
+  authenticated user.
 
 ## Email confirmation delivery
 

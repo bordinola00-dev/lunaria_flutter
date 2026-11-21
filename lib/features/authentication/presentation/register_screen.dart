@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -83,6 +84,15 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
         });
         return;
       }
+    } else if (kReleaseMode) {
+      if (!mounted) return;
+      setState(() {
+        _error =
+            supabaseConfigurationError ??
+            'Supabase no está disponible. Revisa la configuración de la app.';
+        _isBusy = false;
+      });
+      return;
     }
 
     await ref.read(lunariaStoreProvider).authenticate(_name.text);

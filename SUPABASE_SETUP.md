@@ -68,3 +68,13 @@ Lunaria validates `SUPABASE_URL` against the official project URL above and
 passes that exact base URL to the single shared Supabase client. `.env` is not
 loaded by Flutter; the URL also defaults to the official value when no
 `SUPABASE_URL` dart-define is supplied.
+
+## Email confirmation delivery
+
+Email sign-up requires confirmation in the current project. Supabase's default
+email sender is limited to pre-authorized team addresses and has strict
+rate-limits; it is not intended for public production delivery. To send
+verification emails to app users, configure a custom SMTP provider in the
+Supabase Dashboard under **Authentication → SMTP Settings**. Keep email
+confirmation enabled, then test sign-up and the app's **Reenviar correo de
+verificación** action. Do not put SMTP credentials in the Flutter app or Git.

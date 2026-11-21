@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/constants/lunaria_colors.dart';
 import '../../../core/providers.dart';
 import '../../../core/services/supabase_config.dart';
 import '../../../shared/widgets/lunaria_logo.dart';
 import '../../../shared/widgets/lunaria_scaffold.dart';
+import 'auth_error_messages.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
   const RegisterScreen({super.key});
@@ -20,7 +22,10 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   final _email = TextEditingController();
   final _password = TextEditingController();
   bool _obscure = true;
+  bool _isBusy = false;
+  bool _canResendVerification = false;
   String? _error;
+  String? _status;
 
   @override
   void dispose() {
@@ -31,39 +36,103 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
   }
 
   Future<void> _register() async {
+    if (_isBusy) return;
     final email = _email.text.trim();
     if (_name.text.trim().length < 2 ||
         !email.contains('@') ||
         _password.text.length < 6) {
       setState(() {
         _error = 'Completa tu nombre, correo y una contraseña de al menos 6 caracteres.';
+        _status = null;
       });
       return;
     }
 
-    if (supabase != null) {
+    setState(() {
+      _isBusy = true;
+      _error = null;
+      _status = null;
+      _canResendVerification = false;
+    });
+
+    final client = supabase;
+    if (client != null) {
+      late final AuthResponse response;
       try {
-        final response = await supabase!.auth.signUp(
+        response = await client.auth.signUp(
           email: email,
           password: _password.text,
           data: {'name': _name.text.trim()},
         );
-        if (response.session == null) {
-          setState(() {
-            _error = 'Revisa tu correo para confirmar la cuenta y luego inicia sesión.';
-          });
-          return;
-        }
-      } catch (_) {
-        setState(
-          () => _error = 'No pudimos crear la cuenta. Inténtalo de nuevo.',
-        );
+      } on AuthException catch (error) {
+        if (!mounted) return;
+        setState(() {
+          _error = authErrorMessage(error, request: AuthRequest.signUp);
+          _canResendVerification = shouldOfferVerificationResend(error);
+          _isBusy = false;
+        });
+        return;
+      }
+
+      if (response.session == null) {
+        if (!mounted) return;
+        setState(() {
+          _status = 'Cuenta creada. Revisa Recibidos y Spam para confirmar tu correo.';
+          _canResendVerification = true;
+          _isBusy = false;
+        });
         return;
       }
     }
 
     await ref.read(lunariaStoreProvider).authenticate(_name.text);
-    if (mounted) context.go('/');
+    if (!mounted) return;
+    context.go('/');
+  }
+
+  Future<void> _resendVerification() async {
+    final email = _email.text.trim();
+    if (!email.contains('@')) {
+      setState(() {
+        _error = 'Ingresa el correo electrónico de tu cuenta.';
+        _status = null;
+      });
+      return;
+    }
+
+    final client = supabase;
+    if (client == null) {
+      setState(() {
+        _error = 'La verificación por correo requiere conexión con Supabase.';
+        _status = null;
+      });
+      return;
+    }
+
+    setState(() {
+      _isBusy = true;
+      _error = null;
+      _status = null;
+    });
+    try {
+      await client.auth.resend(type: OtpType.signup, email: email);
+      if (!mounted) return;
+      setState(() {
+        _status =
+            'Si la cuenta está pendiente, enviaremos un nuevo enlace. '
+            'Revisa Spam; si no llega, el proyecto necesita SMTP personalizado.';
+      });
+    } on AuthException catch (error) {
+      if (!mounted) return;
+      setState(
+        () => _error = authErrorMessage(
+          error,
+          request: AuthRequest.resendVerification,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isBusy = false);
+    }
   }
 
   @override
@@ -116,10 +185,29 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
           const SizedBox(height: 10),
           Text(_error!, style: const TextStyle(color: LunariaColors.danger)),
         ],
+        if (_status != null) ...[
+          const SizedBox(height: 10),
+          Text(_status!, style: const TextStyle(color: LunariaColors.success)),
+        ],
+        if (_canResendVerification)
+          TextButton.icon(
+            onPressed: _isBusy ? null : _resendVerification,
+            icon: const Icon(Icons.mark_email_read_outlined),
+            label: const Text('Reenviar correo de verificación'),
+          ),
         const SizedBox(height: 18),
         FilledButton(
-          onPressed: _register,
-          child: const Text('Continuar hacia tu llave  →'),
+          onPressed: _isBusy ? null : _register,
+          child: _isBusy
+              ? const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: Colors.white,
+                  ),
+                )
+              : const Text('Continuar hacia tu llave  →'),
         ),
         TextButton(
           onPressed: () => context.go('/login'),

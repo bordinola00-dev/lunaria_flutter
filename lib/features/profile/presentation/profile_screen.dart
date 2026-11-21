@@ -446,8 +446,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                   ),
                 );
               },
-              icon: const Icon(Icons.forum_outlined),
-              label: const Text('Abrir chat privado'),
+              icon: const Icon(Icons.check_circle_outline),
+              label: const Text('Código añadido'),
             ),
           ] else ...[
             const SizedBox(height: 12),

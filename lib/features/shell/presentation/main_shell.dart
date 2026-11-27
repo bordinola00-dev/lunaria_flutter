@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 
 import '../../home/presentation/home_screen.dart';
 import '../../mindspace/presentation/mindspace_screen.dart';

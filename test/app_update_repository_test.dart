@@ -47,6 +47,39 @@ void main() {
     },
   );
 
+  test('fetches the latest stable IPA for iOS', () async {
+    final client = MockClient(
+      (_) async => http.Response(
+        jsonEncode({
+          'tag_name': 'v1.2.0',
+          'draft': false,
+          'prerelease': false,
+          'html_url':
+              'https://github.com/bordinola00-dev/lunaria_flutter/releases/tag/v1.2.0',
+          'assets': [
+            {
+              'name': 'app-release.apk',
+              'browser_download_url':
+                  'https://github.com/bordinola00-dev/lunaria_flutter/releases/download/v1.2.0/app-release.apk',
+            },
+            {
+              'name': 'app-release.ipa',
+              'browser_download_url':
+                  'https://github.com/bordinola00-dev/lunaria_flutter/releases/download/v1.2.0/app-release.ipa',
+            },
+          ],
+        }),
+        200,
+      ),
+    );
+    final repository = AppUpdateRepository(client: client, isIOS: true);
+
+    final release = await repository.fetchLatestRelease();
+
+    expect(release.downloadUri.path, endsWith('/app-release.ipa'));
+    client.close();
+  });
+
   test('rejects APK download URLs outside the official repository', () async {
     final client = MockClient(
       (_) async => http.Response(

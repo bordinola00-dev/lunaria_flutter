@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 final _latestReleaseUri = Uri.https(
@@ -14,15 +14,18 @@ abstract interface class AppUpdateSource {
 }
 
 class AppUpdateRepository implements AppUpdateSource {
-  AppUpdateRepository({http.Client? client})
+  AppUpdateRepository({http.Client? client, bool? isIOS})
     : _client = client ?? http.Client(),
-      _ownsClient = client == null;
+      _ownsClient = client == null,
+      _isIOS =
+          isIOS ?? (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS);
 
   static const _requestTimeout = Duration(seconds: 15);
   static const _downloadPathPrefix =
       '/bordinola00-dev/lunaria_flutter/releases/download/';
   final http.Client _client;
   final bool _ownsClient;
+  final bool _isIOS;
 
   @override
   Future<AppUpdateRelease> fetchLatestRelease() async {
@@ -34,17 +37,13 @@ class AppUpdateRepository implements AppUpdateSource {
             headers: const {
               'Accept': 'application/vnd.github+json',
               'X-GitHub-Api-Version': '2022-11-28',
-              'User-Agent': 'Lunaria-Android-Updater',
+              'User-Agent': 'Lunaria-Updater',
             },
           )
           .timeout(_requestTimeout);
     } on TimeoutException {
       throw const AppUpdateException(
         'GitHub tardó demasiado en responder. Inténtalo de nuevo.',
-      );
-    } on SocketException {
-      throw const AppUpdateException(
-        'No hay conexión a internet. Revisa tu conexión e inténtalo de nuevo.',
       );
     } on http.ClientException {
       throw const AppUpdateException(
@@ -100,10 +99,12 @@ class AppUpdateRepository implements AppUpdateSource {
       );
     }
 
+    final packageExtension = _isIOS ? '.ipa' : '.apk';
+    final packageType = _isIOS ? 'IPA' : 'APK';
     final assets = decoded['assets'];
     if (assets is! List) {
       throw const AppUpdateException(
-        'La versión de GitHub no incluye un APK descargable.',
+        'La versión de GitHub no incluye un instalador descargable.',
       );
     }
 
@@ -112,18 +113,20 @@ class AppUpdateRepository implements AppUpdateSource {
       if (asset is! Map<String, dynamic>) continue;
       final name = asset['name'];
       final url = asset['browser_download_url'];
-      if (name is! String || !name.toLowerCase().endsWith('.apk')) continue;
+      if (name is! String || !name.toLowerCase().endsWith(packageExtension)) {
+        continue;
+      }
       if (url is! String) continue;
 
       final candidate = Uri.tryParse(url);
       if (_isOfficialReleaseAsset(candidate)) {
         downloadUri = candidate;
-        if (name.toLowerCase() == 'app-release.apk') break;
+        if (name.toLowerCase() == 'app-release$packageExtension') break;
       }
     }
     if (downloadUri == null) {
-      throw const AppUpdateException(
-        'La versión más reciente no incluye un APK oficial descargable.',
+      throw AppUpdateException(
+        'La versión más reciente no incluye un $packageType oficial descargable.',
       );
     }
 

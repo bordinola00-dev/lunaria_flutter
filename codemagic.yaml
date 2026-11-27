@@ -1,0 +1,28 @@
+workflows:
+  lunaria_ios_unsigned:
+    name: Lunaria iOS (unsigned)
+    max_build_duration: 120
+    instance_type: mac_mini_m2
+    environment:
+      flutter: stable
+      groups:
+        - lunaria_ios_config
+      vars:
+        SUPABASE_URL: https://gtzzvklqnmndqfzgbmpd.supabase.co
+        SPOTIFY_REDIRECT_URI: lunaria-spotify://callback
+    scripts:
+      - name: Create the ignored .env build asset
+        script: |
+          : "${SUPABASE_ANON_KEY:?Define SUPABASE_ANON_KEY in Codemagic group lunaria_ios_config}"
+          printf '%s\n' \
+            "SUPABASE_URL=$SUPABASE_URL" \
+            "SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY" > .env
+      - name: Resolve Flutter dependencies
+        script: flutter pub get
+      - name: Build unsigned iOS IPA
+        script: |
+          flutter build ipa --release --no-codesign \
+            --dart-define="SPOTIFY_CLIENT_ID=${SPOTIFY_CLIENT_ID:-}" \
+            --dart-define="SPOTIFY_REDIRECT_URI=$SPOTIFY_REDIRECT_URI"
+    artifacts:
+      - build/ios/ipa/*.ipa

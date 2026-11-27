@@ -80,7 +80,7 @@ class SupabaseMelodyRoomRepository implements MelodyRoomRepository {
     if (!spotifyConfigured) {
       throw const MelodyRoomException(
         'Falta SPOTIFY_CLIENT_ID o la URI de retorno no coincide con '
-        'lunaria-spotify://callback.',
+        'la configuración de esta plataforma.',
       );
     }
     final userId = _userId;

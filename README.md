@@ -1,6 +1,7 @@
-# Lunaria Flutter
+# Lunaria
 
-Native Android and iOS reconstruction of Lunaria.
+Flutter/Dart implementation of Lunaria. Android remains native; the iPhone
+experience on this branch is a Safari-installable Progressive Web App (PWA).
 
 ## Run
 
@@ -40,3 +41,14 @@ flutter devices
 flutter run
 flutter build apk --release
 ```
+
+## iPhone PWA
+
+The existing native iOS project is retained. For the iPhone PWA build and
+Cloudflare Pages deployment, see [PWA_DEPLOYMENT.md](PWA_DEPLOYMENT.md).
+
+## Native iOS target
+
+The native iOS project remains in `ios/`; it is not the iPhone distribution
+path targeted by this branch. See [IOS_BUILD.md](IOS_BUILD.md) for its
+previously prepared remote build and private signing notes.

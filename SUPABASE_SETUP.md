@@ -1,4 +1,52 @@
-# Supabase setup
+Quiero que trabajes sobre este proyecto, llamado **Lunaria**, una aplicación desarrollada con Flutter y Dart.
+
+Mi objetivo es preparar una versión **nativa para iOS (iPhone)**. Por ahora, quiero trabajar exclusivamente en la adaptación para iOS.
+
+### Objetivo principal
+Analiza todo el proyecto y adapta su código, configuración y dependencias para que Lunaria pueda ejecutarse correctamente en un iPhone como aplicación nativa.
+
+### Instrucciones
+
+1. Analiza la arquitectura completa del proyecto antes de modificar cualquier archivo.
+2. Identifica las dependencias, paquetes y funcionalidades que no sean compatibles con iOS.
+3. Adapta los archivos de configuración de iOS, incluyendo `Info.plist`, permisos, identificadores y configuraciones necesarias.
+4. Comprueba la compatibilidad de todas las funcionalidades actuales.
+5. Conserva el diseño visual, las animaciones, la navegación y la experiencia original de Lunaria.
+6. Mantén funcionando los servicios externos y las integraciones existentes, como Supabase, autenticación, almacenamiento y cualquier otra que utilice el proyecto.
+7. Revisa los permisos necesarios para cámara, galería, almacenamiento, enlaces externos y demás funcionalidades.
+8. Configura correctamente los identificadores de la aplicación, los esquemas de URL y las integraciones que correspondan.
+9. No elimines funcionalidades simplemente porque presenten incompatibilidades: busca alternativas compatibles con iOS.
+10. No modifiques ni rompas la versión Android. Mantén los cambios específicos de iOS separados siempre que sea posible.
+
+### Restricciones importantes
+
+- No quiero una PWA ni una página web.
+- No quiero convertir Lunaria en una aplicación diferente.
+- Quiero conservar Flutter y Dart.
+- No quiero publicar la aplicación en App Store.
+- Mi objetivo es instalarla de manera privada en un iPhone sin pagar una suscripción de Apple Developer.
+- Trabajo desde Linux y no tengo una Mac.
+
+### Estrategia de compilación e instalación
+
+Investiga y prepara una estrategia viable para compilar remotamente el proyecto iOS utilizando servicios que tengan un plan gratuito.
+
+Evalúa las alternativas para generar un archivo IPA y posteriormente instalarlo de forma privada en un iPhone mediante firma gratuita de Apple, explicando las limitaciones de renovación de certificados y perfiles.
+
+No supongas que todo es gratuito: identifica cualquier requisito, limitación o coste antes de recomendar una solución.
+
+### Forma de trabajo
+
+- Primero realiza una auditoría completa.
+- Después presenta los problemas encontrados y un plan de adaptación.
+- Luego implementa los cambios necesarios.
+- No inventes resultados de compilación ni afirmes que funciona en iPhone si no se ha probado.
+- Si necesitas macOS, Xcode, certificados, credenciales o alguna intervención manual, indícalo claramente.
+- No expongas ni modifiques secretos, claves privadas o credenciales del proyecto.
+
+### Resultado esperado
+
+Quiero que Lunaria quede preparada para compilarse como una aplicación nativa de iOS, conservando todas sus funcionalidades originales, y que me entregues un informe con los cambios realizados, los pasos pendientes y la estrategia más económica para instalarla en el iPhone.# Supabase setup
 
 ## Migration inventory
 

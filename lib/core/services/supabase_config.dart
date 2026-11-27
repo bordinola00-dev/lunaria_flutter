@@ -48,6 +48,15 @@ Future<void> loadSupabaseConfig() {
 Future<void> _loadSupabaseConfig() async {
   if (_configLoaded) return;
 
+  if (kIsWeb) {
+    _resolvedUrl = _dartDefineUrl.trim().isEmpty
+        ? lunariaSupabaseUrl
+        : _dartDefineUrl.trim();
+    _resolvedPublishableKey = _dartDefineKey.trim();
+    _configLoaded = true;
+    return;
+  }
+
   var envUrl = '';
   var envKey = '';
   try {

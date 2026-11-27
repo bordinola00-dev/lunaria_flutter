@@ -1,5 +1,5 @@
-// ignore: deprecated_member_use
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -22,9 +22,12 @@ class _AppUpdateSectionState extends ConsumerState<AppUpdateSection> {
 
   @override
   Widget build(BuildContext context) {
+    if (kIsWeb) return const _WebAppUpdateSection();
+
     final controller = ref.watch(appUpdateControllerProvider);
     final installed = controller.installedVersion;
     final release = controller.latestRelease;
+    final isIOS = defaultTargetPlatform == TargetPlatform.iOS;
 
     return LunariaCard(
       color: const Color(0xFFFFFCFE),
@@ -91,10 +94,14 @@ class _AppUpdateSectionState extends ConsumerState<AppUpdateSection> {
             ),
             const SizedBox(height: 10),
             Text(
-              'Se abrirá el navegador; confirma la descarga e instalación. '
-              'Si Android lo solicita, permite instalar apps desde ese '
-              'navegador en Ajustes > Apps > Acceso especial > Instalar apps '
-              'desconocidas.',
+              isIOS
+                  ? 'Descarga el IPA y ábrelo desde AltStore o SideStore para '
+                        'firmarlo e instalarlo. Con una cuenta gratuita, '
+                        'renueva la firma cada 7 días.'
+                  : 'Se abrirá el navegador; confirma la descarga e instalación. '
+                        'Si Android lo solicita, permite instalar apps desde ese '
+                        'navegador en Ajustes > Apps > Acceso especial > Instalar apps '
+                        'desconocidas.',
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ],
@@ -115,6 +122,7 @@ class _AppUpdateSectionState extends ConsumerState<AppUpdateSection> {
   }
 
   Future<void> _openDownload(Uri uri) async {
+    final isIOS = defaultTargetPlatform == TargetPlatform.iOS;
     setState(() {
       _openingDownload = true;
       _downloadMessage = null;
@@ -124,7 +132,10 @@ class _AppUpdateSectionState extends ConsumerState<AppUpdateSection> {
       if (!mounted) return;
       setState(() {
         _downloadMessage = opened
-            ? 'Se abrió el navegador. Confirma la descarga para continuar.'
+            ? isIOS
+                  ? 'Se abrió el navegador. Guarda el IPA y ábrelo desde '
+                        'AltStore o SideStore para firmarlo e instalarlo.'
+                  : 'Se abrió el navegador. Confirma la descarga para continuar.'
             : 'No se pudo abrir el enlace. Inténtalo de nuevo más tarde.';
       });
     } on PlatformException {
@@ -136,6 +147,32 @@ class _AppUpdateSectionState extends ConsumerState<AppUpdateSection> {
       if (mounted) setState(() => _openingDownload = false);
     }
   }
+}
+
+class _WebAppUpdateSection extends StatelessWidget {
+  const _WebAppUpdateSection();
+
+  @override
+  Widget build(BuildContext context) => LunariaCard(
+    color: const Color(0xFFFFFCFE),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Actualización de Lunaria',
+          style: Theme.of(context).textTheme.titleLarge,
+        ),
+        const SizedBox(height: 8),
+        Text('Lunaria', style: Theme.of(context).textTheme.titleMedium),
+        const SizedBox(height: 8),
+        Text(
+          'Las actualizaciones se publican en la web. Cierra y vuelve a abrir '
+          'Lunaria con conexión para cargar la versión más reciente.',
+          style: Theme.of(context).textTheme.bodyMedium,
+        ),
+      ],
+    ),
+  );
 }
 
 class _UpdateStatus extends StatelessWidget {

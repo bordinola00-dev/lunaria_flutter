@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/constants/lunaria_colors.dart';
 import '../../../core/providers.dart';
+import '../../../core/services/lunaria_authorization.dart';
 import '../../../core/services/supabase_config.dart';
 import '../../../shared/widgets/lunaria_logo.dart';
 import '../../../shared/widgets/lunaria_scaffold.dart';
@@ -49,6 +50,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       _error = null;
       _status = null;
     });
+    ref.read(lunariaStoreProvider).clearAuthorizationDenied();
 
     final client = supabase;
     if (client != null) {
@@ -76,7 +78,40 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       return;
     }
 
-    await ref.read(lunariaStoreProvider).authenticate(email.split('@').first);
+    try {
+      await ref.read(lunariaStoreProvider).authenticate(email.split('@').first);
+    } on LunariaAuthorizationException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _error = error.message;
+        _isBusy = false;
+      });
+      return;
+    } on AuthException {
+      if (!mounted) return;
+      setState(() {
+        _error =
+            'No se pudo cerrar una sesión no autorizada. Inténtalo de nuevo.';
+        _isBusy = false;
+      });
+      return;
+    } on FormatException {
+      if (!mounted) return;
+      setState(() {
+        _error = 'No se pudo verificar la autorización de esta cuenta.';
+        _isBusy = false;
+      });
+      return;
+    } on PostgrestException {
+      if (!mounted) return;
+      setState(() {
+        _error =
+            'No se pudo verificar la autorización en Supabase. '
+            'Inténtalo más tarde.';
+        _isBusy = false;
+      });
+      return;
+    }
     if (!mounted) return;
     context.go('/');
   }
@@ -128,6 +163,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final authorizationDenied = ref
+        .watch(lunariaStoreProvider)
+        .authorizationDenied;
     return LunariaScaffold(
       backgroundColor: LunariaColors.softPink,
       children: [
@@ -189,9 +227,12 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
             ),
           ),
         ),
-        if (_error != null) ...[
+        if (_error != null || authorizationDenied) ...[
           const SizedBox(height: 10),
-          Text(_error!, style: const TextStyle(color: LunariaColors.danger)),
+          Text(
+            _error ?? 'Esta cuenta no está autorizada para usar Lunaria.',
+            style: const TextStyle(color: LunariaColors.danger),
+          ),
         ],
         if (_status != null) ...[
           const SizedBox(height: 10),

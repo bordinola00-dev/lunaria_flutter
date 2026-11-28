@@ -15,7 +15,7 @@ String get spotifyRedirectUri {
     return _spotifyRedirectUri.trim();
   }
   return kIsWeb
-      ? Uri.base.resolve('/auth.html').toString()
+      ? Uri.base.resolve('auth.html').toString()
       : 'lunaria-spotify://callback';
 }
 
@@ -30,7 +30,7 @@ bool get isSpotifyConfigured {
         (uri.host == 'localhost' || uri.host == '127.0.0.1');
     return uri.hasAuthority &&
         uri.host.isNotEmpty &&
-        uri.path == '/auth.html' &&
+        uri.path.endsWith('/auth.html') &&
         (isSecureRedirect || isLocalDevelopmentRedirect);
   }
 

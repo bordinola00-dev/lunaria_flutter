@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../shared/models/lunaria_models.dart';
+import 'lunaria_authorization.dart';
 import 'supabase_config.dart';
 import 'supabase_repository.dart';
 
@@ -17,6 +18,7 @@ class LunariaStore extends ChangeNotifier {
   List<String> interests = const [];
   bool onboardingComplete = false;
   bool authenticated = false;
+  bool authorizationDenied = false;
   List<MoodEntry> moods = [];
   List<DiaryEntry> diaries = [];
   List<BeautyProduct> products = [];
@@ -82,7 +84,23 @@ class LunariaStore extends ChangeNotifier {
 
     final client = supabase;
     if (client != null) {
-      authenticated = client.auth.currentSession != null;
+      if (client.auth.currentSession == null) {
+        authenticated = false;
+      } else {
+        try {
+          authenticated = await isCurrentLunariaUserAuthorized(client);
+        } on Object {
+          await client.auth.signOut();
+          authenticated = false;
+          rethrow;
+        }
+        if (!authenticated) {
+          await client.auth.signOut();
+          authorizationDenied = true;
+        } else {
+          authorizationDenied = false;
+        }
+      }
     } else if (kReleaseMode) {
       authenticated = false;
     }
@@ -224,11 +242,37 @@ class LunariaStore extends ChangeNotifier {
   }
 
   Future<void> authenticate(String displayName) async {
+    final client = supabase;
+    if (client != null && client.auth.currentSession != null) {
+      try {
+        final authorized = await isCurrentLunariaUserAuthorized(client);
+        if (!authorized) {
+          await client.auth.signOut();
+          authorizationDenied = true;
+          authenticated = false;
+          await _save();
+          notifyListeners();
+          throw const LunariaAuthorizationException(
+            'Esta cuenta no está autorizada para usar Lunaria.',
+          );
+        }
+      } on LunariaAuthorizationException {
+        rethrow;
+      } on Object {
+        await client.auth.signOut();
+        authenticated = false;
+        await _save();
+        notifyListeners();
+        rethrow;
+      }
+    }
+
     if (kReleaseMode && supabase?.auth.currentSession == null) {
       throw StateError(
         'No se puede iniciar sesión local en release sin una sesión válida de Supabase.',
       );
     }
+    authorizationDenied = false;
     name = displayName.trim().isEmpty ? name : displayName.trim();
     authenticated = true;
     await _save();
@@ -240,7 +284,14 @@ class LunariaStore extends ChangeNotifier {
 
   Future<void> logout() async {
     authenticated = false;
+    authorizationDenied = false;
     await _save();
+    notifyListeners();
+  }
+
+  void clearAuthorizationDenied() {
+    if (!authorizationDenied) return;
+    authorizationDenied = false;
     notifyListeners();
   }
 

@@ -22,11 +22,10 @@ Flutter app.
 Release builds require valid Supabase configuration and will show a clear
 configuration error instead of starting in local mode.
 
-Read [SUPABASE_SETUP.md](SUPABASE_SETUP.md) before configuring Supabase. This
-repository is missing the base migration `001_lunaria_mvp.sql`, so its included
-migrations cannot provision a new Supabase project from an empty database.
-Migration 007 has already been applied to the current Lunaria environment; do
-not run it there again.
+Read [SUPABASE_SETUP.md](SUPABASE_SETUP.md) before configuring Supabase. The
+base migration `001_lunaria_mvp.sql` has been recovered into this repository
+and verified byte-identical to its source. Migration 007 has already been
+applied to the current Lunaria environment; do not run it there again.
 
 ```bash
 flutter run \
@@ -42,10 +41,10 @@ flutter run
 flutter build apk --release
 ```
 
-## iPhone PWA
+## PWA para iPhone
 
 The existing native iOS project is retained. For the iPhone PWA build and
-Cloudflare Pages deployment, see [PWA_DEPLOYMENT.md](PWA_DEPLOYMENT.md).
+GitHub Pages deployment, see [PWA_DEPLOYMENT.md](PWA_DEPLOYMENT.md).
 
 ## Native iOS target
 

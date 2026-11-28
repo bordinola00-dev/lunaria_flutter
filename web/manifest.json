@@ -1,9 +1,9 @@
 {
-    "id": "/",
+    "id": "/lunaria_flutter/",
     "name": "Lunaria",
     "short_name": "Lunaria",
-    "start_url": "/",
-    "scope": "/",
+    "start_url": "/lunaria_flutter/",
+    "scope": "/lunaria_flutter/",
     "display": "standalone",
     "background_color": "#FBF8FD",
     "theme_color": "#FBF8FD",

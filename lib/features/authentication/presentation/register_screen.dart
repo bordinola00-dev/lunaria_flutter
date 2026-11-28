@@ -6,6 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../core/constants/lunaria_colors.dart';
 import '../../../core/providers.dart';
+import '../../../core/services/lunaria_authorization.dart';
 import '../../../core/services/supabase_config.dart';
 import '../../../shared/widgets/lunaria_logo.dart';
 import '../../../shared/widgets/lunaria_scaffold.dart';
@@ -55,6 +56,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       _status = null;
       _canResendVerification = false;
     });
+    ref.read(lunariaStoreProvider).clearAuthorizationDenied();
 
     final client = supabase;
     if (client != null) {
@@ -78,7 +80,9 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       if (response.session == null) {
         if (!mounted) return;
         setState(() {
-          _status = 'Cuenta creada. Revisa Recibidos y Spam para confirmar tu correo.';
+          _status =
+              'Cuenta creada. Revisa Recibidos y Spam para confirmar tu correo. '
+              'Solo las cuentas autorizadas por Lunaria pueden iniciar sesión.';
           _canResendVerification = true;
           _isBusy = false;
         });
@@ -95,7 +99,40 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
       return;
     }
 
-    await ref.read(lunariaStoreProvider).authenticate(_name.text);
+    try {
+      await ref.read(lunariaStoreProvider).authenticate(_name.text);
+    } on LunariaAuthorizationException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _error = error.message;
+        _isBusy = false;
+      });
+      return;
+    } on AuthException {
+      if (!mounted) return;
+      setState(() {
+        _error =
+            'No se pudo cerrar una sesión no autorizada. Inténtalo de nuevo.';
+        _isBusy = false;
+      });
+      return;
+    } on FormatException {
+      if (!mounted) return;
+      setState(() {
+        _error = 'No se pudo verificar la autorización de esta cuenta.';
+        _isBusy = false;
+      });
+      return;
+    } on PostgrestException {
+      if (!mounted) return;
+      setState(() {
+        _error =
+            'No se pudo verificar la autorización en Supabase. '
+            'Inténtalo más tarde.';
+        _isBusy = false;
+      });
+      return;
+    }
     if (!mounted) return;
     context.go('/');
   }

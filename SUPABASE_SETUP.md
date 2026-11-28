@@ -52,33 +52,56 @@ Quiero que Lunaria quede preparada para compilarse como una aplicación nativa d
 
 This Flutter repository contains these SQL migrations:
 
-1. `supabase/migrations/002_lunaria_profile_trigger.sql`
-2. `supabase/migrations/003_home_daily_data.sql`
-3. `supabase/migrations/004_mindspace_tables_and_rls.sql`
-4. `supabase/migrations/005_beautyroom_catalog_and_storage.sql`
-5. `supabase/migrations/006_melodyroom_spotify_favorites.sql`
-6. `supabase/migrations/007_melodyroom_library_and_my_space.sql`
+1. `supabase/migrations/001_lunaria_mvp.sql`
+2. `supabase/migrations/002_lunaria_profile_trigger.sql`
+3. `supabase/migrations/003_home_daily_data.sql`
+4. `supabase/migrations/004_mindspace_tables_and_rls.sql`
+5. `supabase/migrations/005_beautyroom_catalog_and_storage.sql`
+6. `supabase/migrations/006_melodyroom_spotify_favorites.sql`
+7. `supabase/migrations/007_melodyroom_library_and_my_space.sql`
+8. `supabase/migrations/008_authorized_lunaria_users.sql`
 
-The base migration `001_lunaria_mvp.sql` is not present in this repository.
-Earlier setup instructions referenced a sibling checkout; that path is not
-available when this repository is cloned by itself. The SQL files here are
-therefore not sufficient to provision a new Supabase project from an empty
-database.
-
-Do not reconstruct or substitute the missing migration. Recover the exact
-`001_lunaria_mvp.sql` from the project's authorized source of truth, review it,
-and include it in the migration history before attempting a fresh installation.
-Once recovered, apply the migrations in numerical order, including 002 through
-007. Do not apply 002 through 007 alone to an empty database.
+Migration 001 was recovered from the sibling Lunaria project and copied without
+modifying its source. The copy was verified byte-identical
+(SHA-256 `46d9a1b6db3f9a6509df5969df883015ce2b559012e9f3b3d4ae588d3fccf748`).
+For a new database, review and apply the migrations in numerical order. For an
+existing database, inspect its actual migration history and schema first; do
+not replay migrations already applied.
 
 ## Existing Supabase environment
 
 The current Lunaria Supabase environment has already had migration 007 applied
 and its tables, `songs` columns, private `lunaria-private` bucket, and Realtime
 publication were verified by the project owner. Do not run migration 007 again
-against that environment. This confirmation applies only to the current
-environment; it does not make a fresh installation possible without migration
-001.
+against that environment. This confirmation applies only to the current environment. Migration 008 is a
+new local change and has not been applied to the existing environment.
+
+## Two-account authorization
+
+Migration 008 adds a private PostgreSQL allowlist with exactly two slots,
+restrictive RLS policies for the app tables, Storage and Realtime, and guards
+for the `SECURITY DEFINER` Mi Luna RPCs. The client calls
+`public.is_lunaria_user_authorized()` after restoring or creating a session and
+signs out when the result is false or cannot be verified.
+
+Compare the recovered migration set against the actual project schema, then
+apply migration 008 manually in the Supabase SQL Editor. Then find the real
+account UUIDs under **Authentication → Users** and insert them into the two
+private slots:
+
+```sql
+insert into private.lunaria_authorized_users (slot, user_id)
+values
+  (1, '<REAL_ACCOUNT_UUID_1>'::uuid),
+  (2, '<REAL_ACCOUNT_UUID_2>'::uuid);
+```
+
+Replace both placeholders with the actual UUIDs before executing; do not
+commit them. The allowlist is not in Flutter or the web build. New accounts
+may still be created through Supabase Auth, but accounts outside the two slots
+cannot use the app and are denied by backend policies. The migration files
+have been reviewed statically; this does not prove which migrations or
+policies are currently active in the remote project.
 
 ## Flutter configuration
 

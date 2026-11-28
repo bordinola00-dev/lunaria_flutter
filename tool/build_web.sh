@@ -21,8 +21,33 @@ if [[ "$SUPABASE_URL" != "https://gtzzvklqnmndqfzgbmpd.supabase.co" ]]; then
   exit 1
 fi
 
-if [[ ! "$SPOTIFY_REDIRECT_URI" =~ ^https://[^/]+/auth\.html$ ]]; then
-  printf 'SPOTIFY_REDIRECT_URI must be an HTTPS URL ending in /auth.html.\n' >&2
+if [[ "$SUPABASE_ANON_KEY" == sb_publishable_?* ]]; then
+  :
+elif [[ "$SUPABASE_ANON_KEY" == eyJ*.*.* ]]; then
+  jwt_payload="${SUPABASE_ANON_KEY#*.}"
+  jwt_payload="${jwt_payload%%.*}"
+  jwt_payload="${jwt_payload//-/+}"
+  jwt_payload="${jwt_payload//_/\/}"
+  case $((${#jwt_payload} % 4)) in
+    2) jwt_payload+='==' ;;
+    3) jwt_payload+='=' ;;
+  esac
+  if ! decoded_payload="$(printf '%s' "$jwt_payload" | base64 --decode 2>/dev/null)"; then
+    printf 'SUPABASE_ANON_KEY is not a valid public anon/publishable key.\n' >&2
+    exit 1
+  fi
+  if [[ ! "$decoded_payload" =~ \"role\"[[:space:]]*:[[:space:]]*\"anon\" ]]; then
+    printf 'SUPABASE_ANON_KEY must be an anon/publishable key, not a privileged key.\n' >&2
+    exit 1
+  fi
+else
+  printf 'SUPABASE_ANON_KEY must be a public anon/publishable key.\n' >&2
+  exit 1
+fi
+
+if [[ "$SPOTIFY_REDIRECT_URI" != \
+  "https://bordinola00-dev.github.io/lunaria_flutter/auth.html" ]]; then
+  printf 'SPOTIFY_REDIRECT_URI must match the GitHub Pages auth.html URL.\n' >&2
   exit 1
 fi
 
@@ -40,17 +65,23 @@ cleanup() {
 }
 trap cleanup EXIT
 
-"$flutter_command" build web --release --web-content-hash --base-href / --no-pub \
+"$flutter_command" build web --release --web-content-hash \
+  --base-href /lunaria_flutter/ --pwa-strategy=none --no-pub \
   --dart-define="SUPABASE_URL=$SUPABASE_URL" \
   --dart-define="SUPABASE_ANON_KEY=$SUPABASE_ANON_KEY" \
   --dart-define="SPOTIFY_CLIENT_ID=$SPOTIFY_CLIENT_ID" \
   --dart-define="SPOTIFY_REDIRECT_URI=$SPOTIFY_REDIRECT_URI"
 
-if [[ -d build/web/assets ]]; then
-  find build/web/assets -maxdepth 1 -type f -name '.env*' -delete
+find build/web -type f -name '.env*' -delete
+
+remaining_env="$(find build/web -type f -name '.env*' -print -quit)"
+if [[ -n "$remaining_env" ]]; then
+  printf 'A .env file remains in build/web; refusing to publish it.\n' >&2
+  exit 1
 fi
 
-if [[ ! -f build/web/index.html || ! -f build/web/manifest.json ]]; then
+if [[ ! -f build/web/index.html || ! -f build/web/manifest.json || \
+  ! -f build/web/auth.html ]]; then
   printf 'Flutter did not produce the expected web release files.\n' >&2
   exit 1
 fi
